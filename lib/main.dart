@@ -39,71 +39,78 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     FlutterStatusbarcolor.setStatusBarColor(Colors.deepPurple);
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        child: Container(
-          height: MediaQuery.of(context).size.height,
-          width: MediaQuery.of(context).size.width,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              Flexible(
-                  flex: 10,
-                  child: Stack(
-                    children: <Widget>[
-                      WebviewScaffold(
-                        url: selectedUrl,
-                        javascriptChannels: jsChannels,
-                        mediaPlaybackRequiresUserGesture: false,
-                        withZoom: true,
-                        withLocalStorage: true,
-                        hidden: true,
-                        initialChild: Container(
-                          color: Colors.deepPurple,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              backgroundColor: Colors.cyanAccent,
-                              strokeWidth: 10,
+    return WillPopScope(
+      onWillPop: _onBackPressed,
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: SafeArea(
+          child: Container(
+            height: MediaQuery.of(context).size.height,
+            width: MediaQuery.of(context).size.width,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                Flexible(
+                    flex: 10,
+                    child: Stack(
+                      children: <Widget>[
+                        WebviewScaffold(
+                          url: selectedUrl,
+                          javascriptChannels: jsChannels,
+                          mediaPlaybackRequiresUserGesture: false,
+                          withZoom: true,
+                          withLocalStorage: true,
+                          hidden: true,
+                          initialChild: Container(
+                            color: Colors.deepPurple,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                backgroundColor: Colors.cyanAccent,
+                                strokeWidth: 10,
+                              ),
+                            ),
+                          ),
+                          bottomNavigationBar: BottomAppBar(
+                            child: Row(
+                              children: <Widget>[
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_back_ios),
+                                  onPressed: () {
+                                    flutterWebViewPlugin.goBack();
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_forward_ios),
+                                  onPressed: () {
+                                    flutterWebViewPlugin.goForward();
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.autorenew),
+                                  onPressed: () {
+                                    flutterWebViewPlugin.reload();
+                                  },
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        bottomNavigationBar: BottomAppBar(
-                          child: Row(
-                            children: <Widget>[
-                              IconButton(
-                                icon: const Icon(Icons.arrow_back_ios),
-                                onPressed: () {
-                                  flutterWebViewPlugin.goBack();
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.arrow_forward_ios),
-                                onPressed: () {
-                                  flutterWebViewPlugin.goForward();
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.autorenew),
-                                onPressed: () {
-                                  flutterWebViewPlugin.reload();
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      (showLoading)
-                          ? Center(
-                              child: CircularProgressIndicator(),
-                            )
-                          : Center()
-                    ],
-                  )),
-            ],
+                        (showLoading)
+                            ? Center(
+                                child: CircularProgressIndicator(),
+                              )
+                            : Center()
+                      ],
+                    )),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Future<bool> _onBackPressed() {
+    return flutterWebViewPlugin.goBack();
   }
 }

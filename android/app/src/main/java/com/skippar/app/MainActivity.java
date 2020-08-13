@@ -1,4 +1,4 @@
-package com.eidarousdev.skippar;
+package com.skippar.app;
 
 import io.flutter.embedding.android.FlutterActivity;
 
