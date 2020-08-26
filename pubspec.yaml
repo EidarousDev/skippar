@@ -32,7 +32,7 @@ dependencies:
   font_awesome_flutter: ^8.8.1
   flutter_launcher_icons: ^0.7.5
   flutter_statusbarcolor: ^0.2.3
-  flutter_webview_plugin:
+  webview_flutter: ^0.3.22+1
 
 dev_dependencies:
   flutter_test:
