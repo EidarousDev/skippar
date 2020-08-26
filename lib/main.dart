@@ -2,71 +2,177 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_statusbarcolor/flutter_statusbarcolor.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
 
-void main() => runApp(MaterialApp(
+const kAndroidUserAgent =
+    'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Mobile Safari/537.36';
+
+String selectedUrl = 'https://skippar.com';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  final flutterWebViewPlugin = FlutterWebviewPlugin();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Skippar',
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
       ),
       home: MyHomePage(),
-    ));
-
-const String kNavigationExamplePage = '''
-<!DOCTYPE html><html>
-<head><title>Navigation Delegate Example</title></head>
-<body>
-<p>
-The navigation delegate is set to block navigation to the youtube website.
-</p>
-<ul>
-<ul><a href="https://www.youtube.com/">https://www.youtube.com/</a></ul>
-<ul><a href="https://www.google.com/">https://www.google.com/</a></ul>
-</ul>
-</body>
-</html>
-''';
+    );
+  }
+}
 
 class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key key, this.title}) : super(key: key);
+
+  final String title;
+
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final Completer<WebViewController> _controller =
-      Completer<WebViewController>();
-  String selectedUrl = 'https://skippar.com';
-  // ignore: prefer_collection_literals
-  final Set<JavascriptChannel> jsChannels = [
-    JavascriptChannel(
-        name: 'Print',
-        onMessageReceived: (JavascriptMessage message) {
-          print(message.message);
-        }),
-    JavascriptChannel(
-        name: 'alert',
-        onMessageReceived: (JavascriptMessage message) {
-          print(message.message);
-        }),
-  ].toSet();
-  TextEditingController _teController = new TextEditingController();
+  // Instance of WebView plugin
+  final flutterWebViewPlugin = FlutterWebviewPlugin();
+
+  // On destroy stream
+  StreamSubscription _onDestroy;
+
+  // On urlChanged stream
+  StreamSubscription<String> _onUrlChanged;
+
+  // On urlChanged stream
+  StreamSubscription<WebViewStateChanged> _onStateChanged;
+
+  StreamSubscription<WebViewHttpError> _onHttpError;
+
+  StreamSubscription<double> _onProgressChanged;
+
+  StreamSubscription<double> _onScrollYChanged;
+
+  StreamSubscription<double> _onScrollXChanged;
+
+  final _urlCtrl = TextEditingController(text: selectedUrl);
+
+  final _codeCtrl = TextEditingController(text: 'window.navigator.userAgent');
+
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  final _history = [];
+
   bool showLoading = false;
 
-  void updateLoading(bool ls) {
-    this.setState(() {
-      showLoading = ls;
+  @override
+  void initState() {
+    super.initState();
+
+    flutterWebViewPlugin.close();
+
+    flutterWebViewPlugin.launch(selectedUrl);
+
+    _urlCtrl.addListener(() {
+      selectedUrl = _urlCtrl.text;
     });
+
+    // Add a listener to on destroy WebView, so you can make came actions.
+    _onDestroy = flutterWebViewPlugin.onDestroy.listen((_) {
+      if (mounted) {
+//        // Actions like show a info toast.
+//        _scaffoldKey.currentState.showSnackBar(
+//            const SnackBar(content: const Text('Webview Destroyed')));
+      }
+    });
+
+    // Add a listener to on url changed
+    _onUrlChanged = flutterWebViewPlugin.onUrlChanged.listen((String url) {
+      if (mounted) {
+        setState(() {
+          showLoading = true;
+          _history.add('onUrlChanged: $url');
+        });
+      }
+    });
+
+    _onProgressChanged =
+        flutterWebViewPlugin.onProgressChanged.listen((double progress) {
+      if (mounted) {
+        setState(() {
+          showLoading = true;
+          _history.add("onProgressChanged: $progress");
+        });
+      }
+    });
+
+    _onScrollYChanged =
+        flutterWebViewPlugin.onScrollYChanged.listen((double y) {
+      if (mounted) {
+        setState(() {
+          _history.add('Scroll in Y Direction: $y');
+        });
+      }
+    });
+
+    _onScrollXChanged =
+        flutterWebViewPlugin.onScrollXChanged.listen((double x) {
+      if (mounted) {
+        setState(() {
+          _history.add('Scroll in X Direction: $x');
+        });
+      }
+    });
+
+    _onStateChanged =
+        flutterWebViewPlugin.onStateChanged.listen((WebViewStateChanged state) {
+      if (mounted) {
+        setState(() {
+          _history.add('onStateChanged: ${state.type} ${state.url}');
+        });
+      }
+    });
+
+    _onHttpError =
+        flutterWebViewPlugin.onHttpError.listen((WebViewHttpError error) {
+      if (mounted) {
+        setState(() {
+          _history.add('onHttpError: ${error.code} ${error.url}');
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // Every listener should be canceled, the same should be done with this stream.
+    _onDestroy.cancel();
+    _onUrlChanged.cancel();
+    _onStateChanged.cancel();
+    _onHttpError.cancel();
+    _onProgressChanged.cancel();
+    _onScrollXChanged.cancel();
+    _onScrollYChanged.cancel();
+
+    flutterWebViewPlugin.dispose();
+
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     FlutterStatusbarcolor.setStatusBarColor(Colors.deepPurple);
-    return WillPopScope(
-      onWillPop: _onBackPressed,
-      child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        body: SafeArea(
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      key: _scaffoldKey,
+      body: SafeArea(
+        child: WillPopScope(
+          onWillPop: _backBtnPressed,
           child: Container(
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
@@ -77,125 +183,57 @@ class _MyHomePageState extends State<MyHomePage> {
                     flex: 10,
                     child: Stack(
                       children: <Widget>[
-                        WebView(
-                          initialUrl: 'https://skippar.com/',
-                          javascriptMode: JavascriptMode.unrestricted,
-                          gestureNavigationEnabled: true,
-                          onWebViewCreated:
-                              (WebViewController webViewController) {
-                            _controller.complete(webViewController);
-                          },
-
-                          // TODO(iskakaushik): Remove this when collection literals makes it to stable.
-                          // ignore: prefer_collection_literals
-                          javascriptChannels: <JavascriptChannel>[
-                            _toasterJavascriptChannel(context),
-                          ].toSet(),
-                          navigationDelegate: (NavigationRequest request) {
-                            if (request.url
-                                .startsWith('https://www.youtube.com/')) {
-                              print('blocking navigation to $request}');
-                              return NavigationDecision.prevent;
-                            }
-                            print('allowing navigation to $request');
-                            return NavigationDecision.navigate;
-                          },
+                        WebviewScaffold(
+                          url: selectedUrl,
+                          withZoom: true,
+                          withLocalStorage: true,
+                          hidden: true,
+                          initialChild: Container(
+                            color: Colors.white70,
+                            child: const Center(
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 8.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                          bottomNavigationBar: BottomAppBar(
+                            child: Row(
+                              children: <Widget>[
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_back_ios),
+                                  onPressed: () {
+                                    flutterWebViewPlugin.goBack();
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_forward_ios),
+                                  onPressed: () {
+                                    flutterWebViewPlugin.goForward();
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.autorenew),
+                                  onPressed: () {
+                                    flutterWebViewPlugin.reload();
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        (showLoading)
-                            ? Center(
-                                child: CircularProgressIndicator(),
-                              )
-                            : Center(),
                       ],
                     )),
               ],
             ),
           ),
         ),
-        bottomNavigationBar: NavigationControls(_controller.future),
       ),
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  Future<bool> _onBackPressed() {
-    //return _controller.goBack();
-  }
-
-  JavascriptChannel _toasterJavascriptChannel(BuildContext context) {
-    return JavascriptChannel(
-        name: 'Toaster',
-        onMessageReceived: (JavascriptMessage message) {
-          Scaffold.of(context).showSnackBar(
-            SnackBar(content: Text(message.message)),
-          );
-        });
-  }
-}
-
-class NavigationControls extends StatelessWidget {
-  const NavigationControls(this._webViewControllerFuture)
-      : assert(_webViewControllerFuture != null);
-
-  final Future<WebViewController> _webViewControllerFuture;
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<WebViewController>(
-      future: _webViewControllerFuture,
-      builder:
-          (BuildContext context, AsyncSnapshot<WebViewController> snapshot) {
-        final bool webViewReady =
-            snapshot.connectionState == ConnectionState.done;
-        final WebViewController controller = snapshot.data;
-        return Row(
-          children: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.arrow_back_ios),
-              onPressed: !webViewReady
-                  ? null
-                  : () async {
-                      if (await controller.canGoBack()) {
-                        await controller.goBack();
-                      } else {
-                        Scaffold.of(context).showSnackBar(
-                          const SnackBar(content: Text("No back history item")),
-                        );
-                        return;
-                      }
-                    },
-            ),
-            IconButton(
-              icon: const Icon(Icons.arrow_forward_ios),
-              onPressed: !webViewReady
-                  ? null
-                  : () async {
-                      if (await controller.canGoForward()) {
-                        await controller.goForward();
-                      } else {
-                        Scaffold.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text("No forward history item")),
-                        );
-                        return;
-                      }
-                    },
-            ),
-            IconButton(
-              icon: const Icon(Icons.replay),
-              onPressed: !webViewReady
-                  ? null
-                  : () {
-                      controller.reload();
-                    },
-            ),
-          ],
-        );
-      },
-    );
+  Future<bool> _backBtnPressed() {
+    flutterWebViewPlugin.goBack();
   }
 }

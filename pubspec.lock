@@ -109,6 +109,15 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_webview_plugin:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: "dev/fix_alert_not_work_in_webview"
+      resolved-ref: f281275772d9aaef69887e88dcb75e98235240d7
+      url: "https://github.com/jerryzhoujw/flutter_webview_plugin"
+    source: git
+    version: "0.3.7"
   font_awesome_flutter:
     dependency: "direct main"
     description:
@@ -233,13 +242,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.8"
-  webview_flutter:
-    dependency: "direct main"
-    description:
-      name: webview_flutter
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.3.22+1"
   xml:
     dependency: transitive
     description:
@@ -256,4 +258,4 @@ packages:
     version: "2.2.1"
 sdks:
   dart: ">=2.9.0-14.0.dev <3.0.0"
-  flutter: ">=1.12.13+hotfix.5 <2.0.0"
+  flutter: ">=0.1.4 <2.0.0"

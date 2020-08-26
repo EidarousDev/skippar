@@ -32,7 +32,11 @@ dependencies:
   font_awesome_flutter: ^8.8.1
   flutter_launcher_icons: ^0.7.5
   flutter_statusbarcolor: ^0.2.3
-  webview_flutter: ^0.3.22+1
+  flutter_webview_plugin:
+    git:
+      ref: "dev/fix_alert_not_work_in_webview"
+      url: "https://github.com/jerryzhoujw/flutter_webview_plugin"
+      source: git
 
 dev_dependencies:
   flutter_test:
