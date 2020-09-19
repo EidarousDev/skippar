@@ -95,7 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _onUrlChanged = flutterWebViewPlugin.onUrlChanged.listen((String url) {
       if (mounted) {
         setState(() {
-          showLoading = true;
+          //showLoading = true;
           _history.add('onUrlChanged: $url');
         });
       }
@@ -105,9 +105,28 @@ class _MyHomePageState extends State<MyHomePage> {
         flutterWebViewPlugin.onProgressChanged.listen((double progress) {
       if (mounted) {
         setState(() {
-          showLoading = true;
-          _history.add("onProgressChanged: $progress");
+          //showLoading = true;
+          print("onProgressChanged: $progress");
         });
+      }
+    });
+
+    flutterWebViewPlugin.onStateChanged.listen((viewState) async {
+      if (viewState.type == WebViewState.startLoad) {
+        if (mounted) {
+          setState(() {
+            showLoading = true;
+            print("Loading started!");
+          });
+        }
+      }
+      if (viewState.type == WebViewState.finishLoad) {
+        if (mounted) {
+          setState(() {
+            showLoading = false;
+            print("Loading completed!");
+          });
+        }
       }
     });
 
@@ -133,7 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
         flutterWebViewPlugin.onStateChanged.listen((WebViewStateChanged state) {
       if (mounted) {
         setState(() {
-          _history.add('onStateChanged: ${state.type} ${state.url}');
+          print('onStateChanged: ${state.type} ${state.url}');
         });
       }
     });
@@ -142,7 +161,7 @@ class _MyHomePageState extends State<MyHomePage> {
         flutterWebViewPlugin.onHttpError.listen((WebViewHttpError error) {
       if (mounted) {
         setState(() {
-          _history.add('onHttpError: ${error.code} ${error.url}');
+          print('onHttpError: ${error.code} ${error.url}');
         });
       }
     });
@@ -174,6 +193,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: WillPopScope(
           onWillPop: _backBtnPressed,
           child: Container(
+            color: Color(0xffacaaad),
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
             child: Column(
@@ -190,11 +210,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           hidden: true,
                           initialChild: Container(
                             color: Colors.white70,
-                            child: const Center(
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 8.0,
-                                ),
+                            child: Center(
+                              child: Image.asset(
+                                'assets/skippar_loading.gif',
+                                fit: BoxFit.fill,
                               ),
                             ),
                           ),
